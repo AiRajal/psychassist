@@ -32,7 +32,18 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // ── Security ───────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+    },
+  },
+}));
 app.use(cors({
   origin: true,  // allows any origin (file://, localhost, etc.) — restrict in production
   credentials: true,
