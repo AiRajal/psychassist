@@ -483,14 +483,30 @@ function handleSignup(e) {
   var email = document.getElementById('email-input').value;
   if (!email) return;
 
-  // Store locally for now — swap for real API endpoint later
-  var waitlist = JSON.parse(localStorage.getItem('pa_waitlist') || '[]');
-  waitlist.push({ email: email, date: new Date().toISOString() });
-  localStorage.setItem('pa_waitlist', JSON.stringify(waitlist));
+  var btn = e.target.querySelector('button');
+  btn.textContent = 'Joining...';
+  btn.disabled = true;
 
-  document.getElementById('signup-success').classList.add('show');
-  document.getElementById('email-input').value = '';
-  e.target.querySelector('button').textContent = 'Added!';
+  var apiBase = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
+    ? 'http://localhost:4000/api'
+    : window.location.origin + '/api';
+
+  fetch(apiBase + '/waitlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    document.getElementById('signup-success').classList.add('show');
+    document.getElementById('email-input').value = '';
+    btn.textContent = 'Added!';
+  })
+  .catch(function(err) {
+    btn.textContent = 'Try Again';
+    btn.disabled = false;
+    console.error('Waitlist error:', err);
+  });
 }
 
 // Smooth scroll for anchor links
