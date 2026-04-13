@@ -462,7 +462,7 @@
   <div class="cta-box">
     <h2>Get early access</h2>
     <p>Join the waitlist and be first to try PsychAssist Pro when we launch. Early users get 1 month of Professional free.</p>
-    <form class="signup-form" onsubmit="handleSignup(event)">
+    <form class="signup-form" id="signup-form">
       <input type="email" id="email-input" placeholder="you@example.com" required />
       <button type="submit" class="btn btn-primary">Join Waitlist</button>
     </form>
@@ -478,18 +478,16 @@
 </footer>
 
 <script>
-function handleSignup(e) {
+document.getElementById('signup-form').addEventListener('submit', function(e) {
   e.preventDefault();
   var email = document.getElementById('email-input').value;
   if (!email) return;
 
-  var btn = e.target.querySelector('button');
+  var btn = this.querySelector('button');
   btn.textContent = 'Joining...';
   btn.disabled = true;
 
-  var apiBase = window.location.hostname === 'localhost' || window.location.protocol === 'file:'
-    ? 'http://localhost:4000/api'
-    : window.location.origin + '/api';
+  var apiBase = window.location.origin + '/api';
 
   fetch(apiBase + '/waitlist', {
     method: 'POST',
@@ -507,7 +505,7 @@ function handleSignup(e) {
     btn.disabled = false;
     console.error('Waitlist error:', err);
   });
-}
+});
 
 // Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(function(a) {
