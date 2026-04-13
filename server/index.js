@@ -78,6 +78,16 @@ app.use("/api/billing", billingRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/waitlist", waitlistRoutes);
 
+// ── Landing page (no CSP — simple marketing page) ────────────────
+app.get("/landing.html", (req, res) => {
+  res.removeHeader("Content-Security-Policy");
+  res.sendFile(path.join(__dirname, "..", "public", "landing.html"));
+});
+app.get("/landing", (req, res) => {
+  res.removeHeader("Content-Security-Policy");
+  res.sendFile(path.join(__dirname, "..", "public", "landing.html"));
+});
+
 // ── Serve frontend files ──────────────────────────────────────────
 app.use(express.static(path.join(__dirname, "..", "public")));
 

@@ -462,7 +462,7 @@
   <div class="cta-box">
     <h2>Get early access</h2>
     <p>Join the waitlist and be first to try PsychAssist Pro when we launch. Early users get 1 month of Professional free.</p>
-    <form class="signup-form" id="signup-form">
+    <form class="signup-form" id="signup-form" onsubmit="handleSignup(event)">
       <input type="email" id="email-input" placeholder="you@example.com" required />
       <button type="submit" class="btn btn-primary">Join Waitlist</button>
     </form>
@@ -478,34 +478,36 @@
 </footer>
 
 <script>
-document.getElementById('signup-form').addEventListener('submit', function(e) {
+function handleSignup(e) {
   e.preventDefault();
   var email = document.getElementById('email-input').value;
   if (!email) return;
 
-  var btn = this.querySelector('button');
+  var btn = e.target.querySelector('button');
   btn.textContent = 'Joining...';
   btn.disabled = true;
 
-  var apiBase = window.location.origin + '/api';
-
-  fetch(apiBase + '/waitlist', {
+  fetch('/api/waitlist', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email })
   })
-  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    return res.json();
+  })
   .then(function(data) {
     document.getElementById('signup-success').classList.add('show');
     document.getElementById('email-input').value = '';
     btn.textContent = 'Added!';
+    btn.disabled = false;
   })
   .catch(function(err) {
     btn.textContent = 'Try Again';
     btn.disabled = false;
-    console.error('Waitlist error:', err);
+    alert('Something went wrong: ' + err.message);
   });
-});
+}
 
 // Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(function(a) {
