@@ -87,7 +87,8 @@ const NAV_ITEMS = [{
 }, {
   id: "sessions",
   label: "Sessions",
-  icon: "📋"
+  icon: "📋",
+  pro: true
 }, {
   id: "feedback",
   label: "Feedback",
@@ -97,6 +98,10 @@ const NAV_ITEMS = [{
   label: "Settings",
   icon: "⚙️"
 }];
+
+// Features locked behind Professional plan
+const PRO_FEATURES = new Set(["sessions"]);
+const isPro = plan => plan === "professional" || plan === "clinic";
 const STATUS_COLORS = {
   Active: "#68D391",
   "On Hold": "#F6AD55",
@@ -357,6 +362,281 @@ function Input({
       ...style
     }
   });
+}
+
+// ─── Upgrade Modal ──────────────────────────────────────────────────────────
+
+function UpgradeModal({
+  feature,
+  onClose,
+  onUpgrade
+}) {
+  const featureDescriptions = {
+    sessions: {
+      title: "Session Notes & Voice Recording",
+      desc: "Record sessions with live transcription, speaker detection, and auto-generated clinical notes.",
+      icon: "📋"
+    },
+    patients_limit: {
+      title: "Unlimited Patients",
+      desc: "Starter plan includes up to 5 patients. Upgrade to manage unlimited patients.",
+      icon: "👤"
+    }
+  };
+  const info = featureDescriptions[feature] || {
+    title: "Professional Feature",
+    desc: "This feature requires a Professional plan.",
+    icon: "⭐"
+  };
+  const [loading, setLoading] = useState(false);
+  const handleUpgrade = async () => {
+    setLoading(true);
+    try {
+      const data = await api.post("/billing/checkout", {
+        plan: "professional"
+      });
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Could not start checkout. Please try again.");
+      }
+    } catch (err) {
+      alert("Upgrade failed: " + (err.message || "Please try again."));
+    } finally {
+      setLoading(false);
+    }
+  };
+  return React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 9999
+    }
+  }, React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      background: "#fff",
+      borderRadius: 16,
+      padding: "40px 36px",
+      maxWidth: 420,
+      width: "90%",
+      textAlign: "center",
+      position: "relative",
+      boxShadow: "0 20px 60px rgba(0,0,0,0.15)"
+    }
+  }, React.createElement("button", {
+    onClick: onClose,
+    style: {
+      position: "absolute",
+      top: 12,
+      right: 16,
+      background: "none",
+      border: "none",
+      fontSize: 20,
+      cursor: "pointer",
+      color: colors.textLight
+    }
+  }, "✕"), React.createElement("div", {
+    style: {
+      fontSize: 48,
+      marginBottom: 16
+    }
+  }, info.icon), React.createElement("h2", {
+    style: {
+      color: colors.text,
+      fontSize: 22,
+      marginBottom: 8
+    }
+  }, info.title), React.createElement("p", {
+    style: {
+      color: colors.textLight,
+      fontSize: 14,
+      lineHeight: 1.6,
+      marginBottom: 24
+    }
+  }, info.desc), React.createElement("div", {
+    style: {
+      background: colors.primaryLight,
+      borderRadius: 10,
+      padding: "16px 20px",
+      marginBottom: 24
+    }
+  }, React.createElement("div", {
+    style: {
+      fontSize: 28,
+      fontWeight: 800,
+      color: colors.primary
+    }
+  }, "$14"), React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: colors.textLight
+    }
+  }, "per month · cancel anytime"), React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: colors.primary,
+      fontWeight: 600,
+      marginTop: 4
+    }
+  }, "30-day free trial included")), React.createElement("div", {
+    style: {
+      textAlign: "left",
+      marginBottom: 24
+    }
+  }, ["Unlimited patients", "Voice recording & transcription", "Auto-generated session notes", "Speaker detection", "All Starter features included"].map((item, i) => React.createElement("div", {
+    key: i,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "4px 0",
+      fontSize: 14,
+      color: colors.text
+    }
+  }, React.createElement("span", {
+    style: {
+      color: "#48BB78"
+    }
+  }, "✓"), item))), React.createElement("button", {
+    onClick: handleUpgrade,
+    disabled: loading,
+    style: {
+      width: "100%",
+      padding: "12px 24px",
+      background: colors.primary,
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: loading ? "not-allowed" : "pointer",
+      fontFamily: "inherit",
+      marginBottom: 8
+    }
+  }, loading ? "Starting checkout..." : "Start Free Trial"), React.createElement("button", {
+    onClick: onClose,
+    style: {
+      width: "100%",
+      padding: "10px 24px",
+      background: "transparent",
+      color: colors.textLight,
+      border: "none",
+      borderRadius: 8,
+      fontSize: 13,
+      cursor: "pointer",
+      fontFamily: "inherit"
+    }
+  }, "Maybe later")));
+}
+
+// ─── Pro Feature Lock Screen ────────────────────────────────────────────────
+
+function ProLockScreen({
+  feature,
+  userPlan,
+  onUpgrade
+}) {
+  const info = {
+    sessions: {
+      title: "Session Notes & Voice Recording",
+      desc: "Record therapy sessions, get live transcription with speaker detection, and auto-generate structured clinical notes.",
+      icon: "📋",
+      features: ["Voice recording with waveform visualization", "Live speech-to-text transcription", "Automatic speaker detection", "Template-based clinical note generation", "Session history and playback"]
+    }
+  };
+  const data = info[feature] || {
+    title: "Professional Feature",
+    desc: "Upgrade to access this feature.",
+    icon: "⭐",
+    features: []
+  };
+  return React.createElement("div", {
+    style: {
+      maxWidth: 600,
+      margin: "60px auto",
+      textAlign: "center",
+      padding: "0 20px"
+    }
+  }, React.createElement("div", {
+    style: {
+      width: 80,
+      height: 80,
+      borderRadius: "50%",
+      background: colors.primaryLight,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 36,
+      margin: "0 auto 20px"
+    }
+  }, data.icon), React.createElement("h2", {
+    style: {
+      color: colors.text,
+      fontSize: 24,
+      marginBottom: 8
+    }
+  }, data.title), React.createElement("p", {
+    style: {
+      color: colors.textLight,
+      fontSize: 15,
+      lineHeight: 1.6,
+      marginBottom: 28,
+      maxWidth: 440,
+      margin: "0 auto 28px"
+    }
+  }, data.desc), data.features.length > 0 && React.createElement("div", {
+    style: {
+      background: colors.card,
+      borderRadius: 12,
+      border: `1px solid ${colors.border}`,
+      padding: "20px 28px",
+      textAlign: "left",
+      marginBottom: 28
+    }
+  }, data.features.map((f, i) => React.createElement("div", {
+    key: i,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      padding: "8px 0",
+      fontSize: 14,
+      color: colors.text
+    }
+  }, React.createElement("span", {
+    style: {
+      color: colors.primary,
+      fontSize: 16
+    }
+  }, "✦"), f))), React.createElement("button", {
+    onClick: onUpgrade,
+    style: {
+      padding: "12px 32px",
+      background: colors.primary,
+      color: "#fff",
+      border: "none",
+      borderRadius: 8,
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: "pointer",
+      fontFamily: "inherit"
+    }
+  }, "Upgrade to Professional — $14/mo"), React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: colors.textLight,
+      marginTop: 8
+    }
+  }, "30-day free trial · Cancel anytime"));
 }
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
@@ -5000,6 +5280,7 @@ function PsychAssistApp() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [page, setPage] = useState("dashboard");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(null); // null or feature name
 
   // Check for existing token on mount
   useEffect(() => {
@@ -5144,6 +5425,14 @@ function PsychAssistApp() {
     });
   }
   const renderPage = () => {
+    // Check if the page is a pro feature and user is on starter plan
+    if (PRO_FEATURES.has(page) && !isPro(user?.plan)) {
+      return /*#__PURE__*/React.createElement(ProLockScreen, {
+        feature: page,
+        userPlan: user?.plan,
+        onUpgrade: () => setShowUpgradeModal(page)
+      });
+    }
     switch (page) {
       case "dashboard":
         return /*#__PURE__*/React.createElement(Dashboard, {
@@ -5266,7 +5555,19 @@ function PsychAssistApp() {
     style: {
       fontSize: 18
     }
-  }, item.icon), item.label))), /*#__PURE__*/React.createElement("div", {
+  }, item.icon), item.label, item.pro && !isPro(user?.plan) && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 9,
+      fontWeight: 700,
+      background: "#ECC94B",
+      color: "#744210",
+      padding: "1px 6px",
+      borderRadius: 4,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginLeft: "auto"
+    }
+  }, "PRO")))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "12px 20px",
       borderTop: `1px solid ${colors.border}`
@@ -5304,7 +5605,10 @@ function PsychAssistApp() {
       overflowY: "auto",
       maxWidth: 900
     }
-  }, renderPage()));
+  }, renderPage()), showUpgradeModal && /*#__PURE__*/React.createElement(UpgradeModal, {
+    feature: showUpgradeModal,
+    onClose: () => setShowUpgradeModal(null)
+  }));
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(React.createElement(PsychAssistApp));

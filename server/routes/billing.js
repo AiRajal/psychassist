@@ -36,12 +36,13 @@ router.post("/checkout", authenticate, async (req, res) => {
       runAndSave("UPDATE users SET stripe_customer_id = ? WHERE id = ?", [customerId, user.id]);
     }
 
+    const appUrl = process.env.APP_URL || process.env.FRONTEND_URL || "https://psychassist.onrender.com";
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL}/app?billing=success`,
-      cancel_url: `${process.env.FRONTEND_URL}/app?billing=canceled`,
+      success_url: `${appUrl}?billing=success`,
+      cancel_url: `${appUrl}?billing=canceled`,
       subscription_data: {
         trial_period_days: plan === "professional" ? 30 : undefined,
         metadata: { userId: user.id, plan },
@@ -64,9 +65,10 @@ router.post("/portal", authenticate, async (req, res) => {
       return res.status(400).json({ error: "No billing account found." });
     }
 
+    const appUrl = process.env.APP_URL || process.env.FRONTEND_URL || "https://psychassist.onrender.com";
     const session = await stripe.billingPortal.sessions.create({
       customer: user.stripe_customer_id,
-      return_url: `${process.env.FRONTEND_URL}/app`,
+      return_url: appUrl,
     });
     res.json({ url: session.url });
   } catch (err) {
